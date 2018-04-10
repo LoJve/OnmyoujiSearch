@@ -33,10 +33,9 @@ class ImoocMain(object):
             response = self.downloader.download_with_header(new_url, self.header_shikigami)
             shikigami_dict = self.parser.parser_shikigami(response.read().decode("utf-8"))
             for new_data in shikigami_dict:
-                # new_data = self.parser.parser_shikigami_dict(shikigami_dict, key)
                 self.craw_shikugami_pic(int(new_data["index"]))
                 self.dealer.collect_data(new_data)
-            # self.dealer.deal_data_shikigami()
+            self.dealer.deal_data_shikigami()
 
     # 爬取式神图片
     def craw_shikugami_pic(self, index):
@@ -69,5 +68,5 @@ class ImoocMain(object):
 if __name__ == "__main__":
     obj = ImoocMain()
     obj.craw_shikigami() # 爬取基础数据
-    # obj.craw_explore()      # 爬取探索章节怪物信息
+    obj.craw_explore()      # 爬取探索章节怪物信息
 

@@ -15,6 +15,20 @@ class HtmlParser(object):
                           "6": "巫蛊师", "7": "妖狐", "8": "桃花妖", "9": "孟婆", "10": "酒吞童子",
                           "11": "鬼女红叶", "12": "雪女", "13": "首无", "14": "食梦貘",
                           "15": "跳跳妹妹", "16": "判官", "17": "荒川之主", "18": "大天狗"}
+        self.dict_fix = {
+            "妖怪3-盗墓小鬼<盗墓小鬼*1灯笼鬼*2>": "妖怪3-盗墓小鬼<盗墓小鬼*1+灯笼鬼*2>",
+            "妖怪1-灯笼鬼<灯笼鬼*1+帚神*3": "妖怪1-灯笼鬼<灯笼鬼*1+帚神*3>",
+            "妖怪1-鲤鱼精<鲤鱼精*3+帚神*1": "妖怪1-鲤鱼精<鲤鱼精*3+帚神*1>",
+            "妖怪1-武士之灵<武士之灵*1+寄生魂*3": "妖怪1-武士之灵<武士之灵*1+寄生魂*3>",
+            "妖怪1-饿鬼(左边第一只)<饿鬼*1天邪鬼赤*3>": "妖怪1-饿鬼<饿鬼*1+天邪鬼赤*3>",
+            "妖怪5-饿鬼(最右边一只)饿鬼*1+天邪鬼赤*3+首无*1>": "妖怪5-饿鬼<饿鬼*1+天邪鬼赤*3+首无*1>",
+            "妖怪6-涂壁(最右)涂壁*6+食梦貘*1>": "妖怪6-涂壁<涂壁*6+食梦貘*1>"
+        }
+        self.dict_fix_monster = {
+            "睡觉的帚神": "帚神",
+            "提灯小鬼": "提灯小僧"
+        }
+
 
     # 式神基础信息解析
     def parser_shikigami(self, response):
@@ -51,9 +65,12 @@ class HtmlParser(object):
                 is_print = False
             if is_print:
                 try:
+                    if html_text in self.dict_fix.keys():
+                        html_text = self.dict_fix[html_text]
                     if re.search(r'\d+、', html_text) is not None:
                         chapter, new_data = self.__parser_chapter_title(html_text)
-                        self.dict_chapter.append(new_data)
+                        if new_data not in self.dict_chapter:
+                            self.dict_chapter.append(new_data)
                     else:
                         # 妖怪1(简单)-天邪鬼绿<天邪鬼绿*1+灯笼鬼*2>
                         # 妖怪2-天邪鬼绿<天邪鬼绿*1+ 提灯小僧*2>
@@ -64,6 +81,15 @@ class HtmlParser(object):
                             monster_main = info.group(2)        # 天邪鬼绿
                             monster_detail = info.group(3)      # 天邪鬼绿*1+灯笼鬼*2
 
+                            # 对异常的怪物名称进行处理
+                            main_info = re.search(r'(.*)\(.*\)', monster_main)
+                            if main_info is not None:
+                                monster_main = main_info.group(1)
+                            if "," in monster_main:
+                                monster_main = monster_main.replace(",", "")
+                            if monster_main in self.dict_fix_monster:
+                                monster_main = self.dict_fix_monster[monster_main]
+
                             all_descs = []
                             info_desc = re.search(r'妖怪(.*)', monster_desc)
                             if info_desc is None:
@@ -71,13 +97,18 @@ class HtmlParser(object):
                             else:
                                 chapters = info_desc.group(1).split("，")
                                 for cpt in chapters:
-                                    all_descs.append(cpt)
+                                    if cpt not in all_descs:
+                                        all_descs.append(cpt)
                             # print(all_descs)
                             for cpt in all_descs:
                                 dict_monster, dict_monster_details = \
                                     self.__parser_chapter_monster(chapter, cpt, monster_main, monster_detail)
-                                self.dict_chapter_monster.append(dict_monster)
-                                self.dict_chapter_monster_detail.extend(dict_monster_details)
+                                if dict_monster not in self.dict_chapter_monster:
+                                    self.dict_chapter_monster.append(dict_monster)
+                                for detail in dict_monster_details:
+                                    if detail not in self.dict_chapter_monster_detail:
+                                        self.dict_chapter_monster_detail.append(detail)
+                                # self.dict_chapter_monster_detail.extend(dict_monster_details)
                 except Exception as e:
                     print("craw error! %s", html_text)
                     print(e)
@@ -91,7 +122,7 @@ class HtmlParser(object):
         title = info.group(2).strip("：")
         new_data["chapter"] = chapter
         new_data["title"] = title
-        print("第%d章 %s" % (chapter, title))
+        # print("第%d章 %s" % (chapter, title))
         return chapter, new_data
 
     # 处理各章节中的怪物明细
@@ -99,7 +130,7 @@ class HtmlParser(object):
         dict_monster = {}
         monster_type = "monster"
         difficulty = "all"
-        location = 1
+        location = 0
 
         if monster_main == self.dict_boss[str(chapter)]:        # BOSS
             monster_type = "BOSS"
@@ -122,11 +153,11 @@ class HtmlParser(object):
         dict_monster["difficulty"] = difficulty
         dict_monster["location"] = location
         dict_monster["monster_type"] = monster_type
-        dict_monster_details = self.__parser_chapter_monster_detail(chapter, location, monster_detail)
+        dict_monster_details = self.__parser_chapter_monster_detail(chapter, location, difficulty, monster_detail)
         return dict_monster, dict_monster_details
 
     # 解析每一个怪物里的怪物种类
-    def __parser_chapter_monster_detail(self, chapter, location, monster_detail):
+    def __parser_chapter_monster_detail(self, chapter, location, difficulty, monster_detail):
         dict_monster_details = []
 
         # 涂壁*1+黑豹*1+天邪鬼赤*2
@@ -137,7 +168,9 @@ class HtmlParser(object):
                 info_detail = info.split("*")
                 dict_monster_detail["chapter"] = chapter
                 dict_monster_detail["location"] = location
+                dict_monster_detail["difficulty"] = difficulty
                 dict_monster_detail["monster"] = info_detail[0]
                 dict_monster_detail["monster_cnt"] = int(info_detail[1])
-                dict_monster_details.append(dict_monster_detail)
+                if dict_monster_detail not in dict_monster_details:
+                    dict_monster_details.append(dict_monster_detail)
         return dict_monster_details

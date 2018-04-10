@@ -3,6 +3,14 @@ import sqlite3
 
 import os
 
+from django.shortcuts import get_object_or_404
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "OnmyojiSearch.settings")
+import django
+django.setup()
+
+from OnmyojiSearch.models import *
+
 
 class DataDealer(object):
     def __init__(self):
@@ -11,12 +19,11 @@ class DataDealer(object):
 
     # 式神基础信息处理
     def collect_data(self, new_data):
-        if new_data is not None:
+        if new_data is not None and new_data not in self.new_datas:
             self.new_datas.append(new_data)
 
     def deal_data_shikigami(self):
-        if len(self.new_datas) > 0:
-            self.insert_shikigami_data()
+        self.insert_shikigami_data()
 
     # 式神图片下载
     def download_pic(self, response, path, filename):
@@ -31,62 +38,56 @@ class DataDealer(object):
 
     # 章节怪物信息处理
     def save_chapter_data(self, dict_chapter, dict_chapter_monster, dict_chapter_monster_detail):
-        dict_chapter = dict_chapter
-        dict_chapter_monster = dict_chapter_monster
-        dict_chapter_monster_detail = dict_chapter_monster_detail
+        chapters = []
+        chapter_monsters = []
+        chapter_details = []
+        if dict_chapter is not None and len(dict_chapter) > 0:
+            for dict in dict_chapter:
+                chapter = Chapter(chapter=int(dict["chapter"]), title=dict["title"])
+                chapters.append(chapter)
+        Chapter.objects.bulk_create(chapters)
 
-        sql_chapter = """
-            INSERT INTO chapter (chapter, title)
-            VALUES  
-        """
-        sql_chapter_monster = """
-            INSERT INTO chapter_monster (chapter, monster, difficulty, location, monster_type)
-            VALUES  
-        """
-        sql_chapter_monster_detail = """
-            INSERT INTO chapter_detail (chapter, location, monster, monster_cnt)
-            VALUES  
-        """
+        if dict_chapter_monster is not None and len(dict_chapter_monster) > 0:
+            for dict in dict_chapter_monster:
+                try:
+                    chapter = get_object_or_404(Chapter,chapter=dict["chapter"])
+                    monster = get_object_or_404(Monster,name=dict["monster"])
+                except Exception as e:
+                    print(dict)
+                chapter_monster = ChapterMonster(chapter=chapter, monster=monster,difficulty=dict["difficulty"],
+                                                 location=int(str(dict["location"])), genre=dict["monster_type"])
+                if chapter_monster not in chapter_monsters:
+                    chapter_monsters.append(chapter_monster)
+            ChapterMonster.objects.bulk_create(chapter_monsters)
 
-        for chapter in dict_chapter:
-            sql_chapter += "(%d, '%s')," % (int(chapter["chapter"]), chapter["title"])
+        if dict_chapter_monster_detail is not None and len(dict_chapter_monster_detail) > 0:
+            for dict in dict_chapter_monster_detail:
+                try:
+                    # monster = get_object_or_404(Monster, name=dict["monster"])
+                    chapster_monster = get_object_or_404(ChapterMonster, chapter=dict["chapter"],
+                                                         difficulty=dict["difficulty"], location=int(dict["location"]))
 
-        for monster in dict_chapter_monster:
-            sql_chapter_monster += "(%d, '%s', '%s', %d, '%s')," \
-                  % (monster["chapter"], monster["monster"], monster["difficulty"], int(str(monster["location"])), monster["monster_type"])
-        for detail in dict_chapter_monster_detail:
-            sql_chapter_monster_detail += "(%d, %d, '%s', %d)," \
-                  % (int(detail["chapter"]), int(detail["location"]), detail["monster"], int(detail["monster_cnt"]))
-        sql_chapter = sql_chapter.rstrip(",")
-        sql_chapter_monster = sql_chapter_monster.rstrip(",")
-        sql_chapter_monster_detail = sql_chapter_monster_detail.rstrip(",")
-        print(sql_chapter)
-        self.execute_sql(self.database, sql_chapter)
-        print(sql_chapter_monster)
-        self.execute_sql(self.database, sql_chapter_monster)
-        print(sql_chapter_monster_detail)
-        self.execute_sql(self.database, sql_chapter_monster_detail)
+                    chapter_detail = ChapterMonsterDetail(chapter_monster=chapster_monster, monster=dict["monster"],
+                                                          cnt=int(dict["monster_cnt"]))
+                    if chapter_detail not in chapter_details:
+                        chapter_details.append(chapter_detail)
+                except Exception as e:
+                    print(dict)
+                    print(e)
+                    return
+
+
+        ChapterMonsterDetail.objects.bulk_create(chapter_details)
 
     # 插入式神基础信息
     def insert_shikigami_data(self):
         if len(self.new_datas) > 0:
-            sql = """
-                      INSERT INTO shikigami (key, rarity, interactive, name, icon)
-                      VALUES  
-                  """
-
+            monsters = []
             for new_data in self.new_datas:
-                sql += "('%s', %d, %d, '%s', '%s')," \
-                       % (new_data["index"],int(new_data["rarity"]),int(new_data["interactive"]),new_data["name"],new_data["icon"])
-            sql = sql.rstrip(',')
+                monster = Monster(index=new_data["index"],rarity=int(new_data["rarity"]),
+                                  interactive=int(new_data["interactive"]),name=new_data["name"],icon=new_data["icon"])
+                monsters.append(monster)
+            Monster.objects.bulk_create(monsters)
 
-            self.execute_sql(self.database, sql)
 
-    # 更新数据库表--新增
-    def execute_sql(self, database, sql):
-        if sql is not None:
-            conn = sqlite3.connect(database)
-            c = conn.cursor()
-            c.execute(sql)
-            conn.commit()
-            conn.close()
+

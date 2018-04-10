@@ -29,7 +29,7 @@ class Chapter(models.Model):
 
 class ChapterMonster(models.Model):
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE)
-    monster = models.OneToOneField(Monster, on_delete=models.CASCADE)
+    monster = models.ForeignKey(Monster, on_delete=models.CASCADE)
     difficulty = models.CharField(max_length=10)
     location = models.IntegerField()
     genre = models.CharField(max_length=20)
@@ -40,7 +40,7 @@ class ChapterMonster(models.Model):
 
 class ChapterMonsterDetail(models.Model):
     chapter_monster = models.ForeignKey(ChapterMonster, on_delete=models.CASCADE)
-    monster = models.OneToOneField(Monster, on_delete=models.CASCADE)
+    monster = models.CharField(max_length=20)
     cnt = models.IntegerField()
 
     class Meta:
