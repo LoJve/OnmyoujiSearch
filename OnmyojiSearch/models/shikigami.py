@@ -45,3 +45,11 @@ class ChapterMonsterDetail(models.Model):
 
     class Meta:
         db_table = "chapter_detail"
+
+
+class Rarity(models.Model):
+    rarity = models.IntegerField(primary_key=True)
+    desc = models.CharField(max_length=10)
+
+    class Meta:
+        db_table = "rarity"

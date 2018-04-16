@@ -14,14 +14,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf.urls import url
 
 from OnmyojiSearch.views import IndexView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    url(r'^index/$', IndexView.index),
+    url(r'^search/', include("OnmyojiSearch.urls.search", namespace="search")),
 ]
 
 

@@ -1,12 +1,61 @@
 {% load i18n %}
+{% load static %}
+{% load extras %}
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <title>{% trans "Onmyouji shikigami search" %}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="{% static 'OnmyojiSearch/css/bootstrap.min.css' %}" />
 </head>
 <body>
-    <h1>{% trans "Simplified Chinese" %}</h1>
+    <div class="container">
+        <h1>{% trans "Onmyouji shikigami search" %}</h1>
+        <img src="{%  static 'OnmyojiSearch/image/200.png' %}">
+    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4 text-center bg-primary">
+                <a href="{% url 'search:index' %}" style="color: white;text-decoration: none">{% trans "Search" %}</a>
+            </div>
+            <div class="col-md-4 text-center bg-primary">col-md-1</div>
+            <div class="col-md-4 text-center bg-primary">col-md-1</div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2 text-center">
+                <div class="tab">{% trans "shikigami items" %}</div>
+                {% for r in rarity %}
+                    <div><a target="_top" href="">{% trans r.desc %}</a></div>
+                {% endfor %}
+{#                <div><a target="_top" href="">{% trans "all" %}</a></div>#}
+{#                <div><a target="_top" href="">SSR</a></div>#}
+{#                <div><a target="_top" href="">SR</a></div>#}
+{#                <div><a target="_top" href="">R</a></div>#}
+{#                <div><a target="_top" href="">N</a></div>#}
+            </div>
+            <div class="col-md-10 text-center">
+                {% for monster in monsters %}
+                    {% cycle  0 1 2 3 as ii silent %}
+                    {% if ii == 0 %}
+                        <div class="row">
+                    {% endif %}
+
+                    <div class="col-md-3">
+                        <img src="{% static monster.index|format_str:'OnmyojiSearch/image/%s.png' %}">
+                        {{ monster.name }}
+                    </div>
+                    {% if ii == 3 %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="/OnmyojiSearch/static/OnmyojiSearch/js/bootstrap.min.js"></script>
+
 </body>
 </html>

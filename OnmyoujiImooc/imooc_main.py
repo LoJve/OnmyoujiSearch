@@ -65,8 +65,8 @@ class ImoocMain(object):
 
 
 
-if __name__ == "__main__":
-    obj = ImoocMain()
-    obj.craw_shikigami() # 爬取基础数据
-    obj.craw_explore()      # 爬取探索章节怪物信息
+# if __name__ == "__main__":
+#     obj = ImoocMain()
+#     obj.craw_shikigami() # 爬取基础数据
+#     obj.craw_explore()      # 爬取探索章节怪物信息
 

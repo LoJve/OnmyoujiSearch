@@ -20,3 +20,19 @@ msgstr ""
 #: .\OnmyojiSearch\settings.py:112
 msgid "Simplified Chinese"
 msgstr "简体中文"
+
+# .\templates\OnmyojiSearch\index.html:7,12
+msgid "Onmyouji shikigami search"
+msgstr "阴阳师式神搜索"
+
+# .\templates\OnmyojiSearch\index.html:16
+msgid "Search"
+msgstr "式神搜索"
+
+# .\templates\OnmyojiSearch\index.html:25
+msgid "shikigami items"
+msgstr "式神录"
+
+# .\templates\OnmyojiSearch\index.html:26
+msgid "all"
+msgstr "全部"
